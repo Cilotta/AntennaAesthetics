@@ -1,0 +1,44 @@
+{
+  "textures": {
+    "metal": "minecraft:block/copper_block",
+    "core": "minecraft:block/redstone_block"
+  },
+  "elements": [
+    {
+      "from": [7, 0, 7],
+      "to": [9, 16, 9],
+      "faces": {
+        "north": {"texture": "#metal"},
+        "south": {"texture": "#metal"},
+        "east": {"texture": "#metal"},
+        "west": {"texture": "#metal"},
+        "up": {"texture": "#metal"},
+        "down": {"texture": "#metal"}
+      }
+    },
+    {
+      "from": [4, 7, 7],
+      "to": [12, 9, 9],
+      "faces": {
+        "north": {"texture": "#core"},
+        "south": {"texture": "#core"},
+        "east": {"texture": "#core"},
+        "west": {"texture": "#core"},
+        "up": {"texture": "#core"},
+        "down": {"texture": "#core"}
+      }
+    },
+    {
+      "from": [7, 7, 4],
+      "to": [9, 9, 12],
+      "faces": {
+        "north": {"texture": "#core"},
+        "south": {"texture": "#core"},
+        "east": {"texture": "#core"},
+        "west": {"texture": "#core"},
+        "up": {"texture": "#core"},
+        "down": {"texture": "#core"}
+      }
+    }
+  ]
+}

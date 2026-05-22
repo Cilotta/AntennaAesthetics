@@ -1,0 +1,20 @@
+{
+  "itemGroup.antennaaesthetics": "Antenna Aesthetics",
+  "block.antennaaesthetics.example_block": "Example Block",
+  "block.antennaaesthetics.linear_antenna": "Linear Antenna",
+  "item.antennaaesthetics.example_item": "Example Item",
+  "message.antennaaesthetics.linear_antenna.assembled": "Linear antenna assembled: %s elements.",
+  "message.antennaaesthetics.linear_antenna.channel": "Linear antenna tuned to channel %s.",
+  "message.antennaaesthetics.linear_antenna.music_source": "Broadcasting disc signal: %s.",
+  "message.antennaaesthetics.linear_antenna.not_assembled": "This antenna must be assembled before it can broadcast.",
+  "message.antennaaesthetics.linear_antenna.too_short": "Cannot assemble: linear antennas need at least %s contiguous blocks, found %s.",
+  "message.antennaaesthetics.linear_antenna.too_tall": "Cannot assemble: linear antennas support at most %s contiguous blocks.",
+
+  "antennaaesthetics.configuration.title": "AntennaAesthetics Configs",
+  "antennaaesthetics.configuration.section.antennaaesthetics.common.toml": "AntennaAesthetics Configs",
+  "antennaaesthetics.configuration.section.antennaaesthetics.common.toml.title": "AntennaAesthetics Configs",
+  "antennaaesthetics.configuration.items": "Item List",
+  "antennaaesthetics.configuration.logDirtBlock": "Log Dirt Block",
+  "antennaaesthetics.configuration.magicNumberIntroduction": "Magic Number Text",
+  "antennaaesthetics.configuration.magicNumber": "Magic Number"
+}

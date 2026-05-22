@@ -1,0 +1,19 @@
+{
+  "itemGroup.antennaaesthetics": "天线美学",
+  "block.antennaaesthetics.example_block": "示例方块",
+  "block.antennaaesthetics.linear_antenna": "线性天线",
+  "item.antennaaesthetics.example_item": "示例物品",
+  "message.antennaaesthetics.linear_antenna.assembled": "线性天线已组装：%s 个单元。",
+  "message.antennaaesthetics.linear_antenna.channel": "线性天线已调频到频道 %s。",
+  "message.antennaaesthetics.linear_antenna.music_source": "正在广播唱片信号：%s。",
+  "message.antennaaesthetics.linear_antenna.not_assembled": "该天线需要先组装，才能广播信号。",
+  "message.antennaaesthetics.linear_antenna.too_short": "无法组装：线性天线至少需要 %s 个连续方块，当前为 %s 个。",
+  "message.antennaaesthetics.linear_antenna.too_tall": "无法组装：线性天线最多支持 %s 个连续方块。",
+  "antennaaesthetics.configuration.title": "AntennaAesthetics 配置",
+  "antennaaesthetics.configuration.section.antennaaesthetics.common.toml": "AntennaAesthetics 配置",
+  "antennaaesthetics.configuration.section.antennaaesthetics.common.toml.title": "AntennaAesthetics 配置",
+  "antennaaesthetics.configuration.items": "物品列表",
+  "antennaaesthetics.configuration.logDirtBlock": "记录泥土方块",
+  "antennaaesthetics.configuration.magicNumberIntroduction": "魔法数字文本",
+  "antennaaesthetics.configuration.magicNumber": "魔法数字"
+}
