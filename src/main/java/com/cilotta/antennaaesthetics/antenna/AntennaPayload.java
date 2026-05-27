@@ -7,5 +7,10 @@ import net.minecraft.resources.Identifier;
  * Other integrations can add their own records/classes without changing the antenna table.
  */
 public interface AntennaPayload {
+    /**
+     * Returns the stable identifier used to route and aggregate this payload.
+     *
+     * @return payload type id, usually under this mod's namespace
+     */
     Identifier typeId();
 }
