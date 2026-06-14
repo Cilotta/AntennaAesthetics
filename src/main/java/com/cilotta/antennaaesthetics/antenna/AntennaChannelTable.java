@@ -46,6 +46,22 @@ public final class AntennaChannelTable {
     }
 
     /**
+     * Atomically replaces every channel currently published by one antenna.
+     */
+    public static void publishAll(ServerLevel level, AntennaNodeKey source, int range,
+            Map<Integer, Map<Identifier, AntennaPayload>> transmissions) {
+        prune(level);
+        remove(source);
+        transmissions.forEach((channel, payloads) -> {
+            if (!payloads.isEmpty()) {
+                CHANNELS.computeIfAbsent(channel, ignored -> new LinkedHashMap<>())
+                        .put(source, new AntennaTransmission(source, channel, range, Map.copyOf(payloads),
+                                level.getGameTime()));
+            }
+        });
+    }
+
+    /**
      * Removes one antenna from every channel.
      *
      * @param source node to remove, usually when broken or invalid

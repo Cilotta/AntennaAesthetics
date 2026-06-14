@@ -15,11 +15,9 @@ import com.cilotta.antennaaesthetics.antenna.AntennaPayload;
 import com.cilotta.antennaaesthetics.antenna.AntennaPayloadTypes;
 import com.cilotta.antennaaesthetics.antenna.MusicDiscPayload;
 import com.cilotta.antennaaesthetics.antenna.RedstonePayload;
-import com.cilotta.antennaaesthetics.block.AntennaBaseBlock;
 import com.cilotta.antennaaesthetics.block.AntennaDataCableBlock;
 import com.cilotta.antennaaesthetics.block.LinearAntennaMultiblock;
 import com.cilotta.antennaaesthetics.block.LinearAntennaScanResult;
-import com.cilotta.antennaaesthetics.block.RedstoneConverterBlock;
 import com.cilotta.antennaaesthetics.menu.AntennaBaseMenu;
 import com.cilotta.antennaaesthetics.registry.ModBlockEntities;
 
@@ -72,13 +70,9 @@ public class AntennaBaseBlockEntity extends BlockEntity implements MenuProvider,
         @Override
         public int get(int index) {
             return switch (index) {
-                case 0 -> AntennaBaseBlockEntity.this.channel;
-                case 1 -> AntennaBaseBlockEntity.this.assembled ? 1 : 0;
-                case 2 -> AntennaBaseBlockEntity.this.antennaCount;
-                case 3 -> AntennaBaseBlockEntity.this.receivedRedstonePower;
-                case 4 -> AntennaBaseBlockEntity.this.getTransmissionRange();
-                case 5 -> LinearAntennaMultiblock.maxAntennaCount();
-                case 6 -> LinearAntennaMultiblock.blocksPerAntenna();
+                case 0 -> AntennaBaseBlockEntity.this.assembled ? 1 : 0;
+                case 1 -> AntennaBaseBlockEntity.this.antennaCount;
+                case 2 -> AntennaBaseBlockEntity.this.getTransmissionRange();
                 default -> 0;
             };
         }
@@ -127,9 +121,11 @@ public class AntennaBaseBlockEntity extends BlockEntity implements MenuProvider,
         }
 
         AntennaNodeKey node = base.nodeKey(serverLevel);
-        AntennaChannelTable.publish(serverLevel, node, base.channel, base.getTransmissionRange(), base.buildLocalPayloads(serverLevel));
-        base.applyReceivedPayloads(serverLevel, node);
-        base.remoteSongPlayer.tick(serverLevel, state);
+        Set<RedstoneConverterBlockEntity> converters = base.connectedRedstoneConverters(serverLevel);
+        AntennaChannelTable.publishAll(serverLevel, node, base.getTransmissionRange(),
+                base.buildLocalTransmissions(serverLevel, converters));
+        base.applyReceivedPayloads(serverLevel, node, converters);
+        //base.remoteSongPlayer.tick(serverLevel, state);
     }
 
     /**
@@ -157,28 +153,6 @@ public class AntennaBaseBlockEntity extends BlockEntity implements MenuProvider,
         return this.level == null
                 ? LinearAntennaScanResult.missingLevel(this.worldPosition)
                 : LinearAntennaMultiblock.scanFromBase(this.level, this.worldPosition);
-    }
-
-    /**
-     * Returns the currently tuned channel.
-     *
-     * @return channel number
-     */
-    public int getChannel() {
-        return this.channel;
-    }
-
-    /**
-     * Adjusts the channel by cycling through the channels that the current
-     * physical antenna length can support.
-     *
-     * @param delta signed channel delta
-     * @return updated channel
-     */
-    public int adjustChannel(int delta) {
-        this.channel = AntennaFrequencyPlan.cycleChannel(this.channel, this.antennaCount, delta);
-        this.setChanged();
-        return this.channel;
     }
 
     /**
@@ -259,73 +233,32 @@ public class AntennaBaseBlockEntity extends BlockEntity implements MenuProvider,
      * @param level server level used for redstone lookup and song resolution
      * @return payloads keyed by payload type id
      */
-    private Map<Identifier, AntennaPayload> buildLocalPayloads(ServerLevel level) {
-        Map<Identifier, AntennaPayload> payloads = new HashMap<>();
-
-        /*
-         * If this base is currently outputting power received from another antenna,
-         * do not treat its attached output wiring as a new local input. Without this
-         * guard, receiver-side redstone dust can feed the same power back into the
-         * global channel table and keep the signal latched after the original sender
-         * turns off.
-         */
-        int localPower = 0;
-        if (this.receivedRedstonePower == 0) {
-            localPower = Math.max(this.getExternalRedstonePower(level), this.getConnectedConverterInputPower(level));
-        }
-        if (localPower > 0) {
-            payloads.put(RedstonePayload.ID, new RedstonePayload(localPower));
-        }
-
-        JukeboxSong.fromStack(this.sourceDisc)
-                .ifPresent(song -> payloads.put(MusicDiscPayload.ID, new MusicDiscPayload(this.sourceDisc, song)));
-        return payloads;
-    }
-
-    /**
-     * Reads redstone power from neighboring non-antenna blocks.
-     * <p>
-     * Adjacent antenna bases are ignored so linked bases cannot directly count
-     * each other's output as fresh local input.
-     *
-     * @param level server level used for redstone lookup
-     * @return strongest external neighbor signal
-     */
-    private int getExternalRedstonePower(ServerLevel level) {
-        int power = 0;
-        for (Direction direction : Direction.values()) {
-            BlockPos neighborPos = this.worldPosition.relative(direction);
-            BlockState neighborState = level.getBlockState(neighborPos);
-            if (neighborState.getBlock() instanceof AntennaBaseBlock
-                    || neighborState.getBlock() instanceof AntennaDataCableBlock
-                    || neighborState.getBlock() instanceof RedstoneConverterBlock) {
+    private Map<Integer, Map<Identifier, AntennaPayload>> buildLocalTransmissions(ServerLevel level,
+            Set<RedstoneConverterBlockEntity> converters) {
+        Set<Integer> supportedChannels = Set.copyOf(AntennaFrequencyPlan.supportedChannels(this.antennaCount));
+        Map<Integer, Integer> redstoneByChannel = new HashMap<>();
+        for (RedstoneConverterBlockEntity converter : converters) {
+            int channel = converter.getInputChannel();
+            if (!supportedChannels.contains(channel)) {
                 continue;
             }
-
-            power = Math.max(power, level.getSignal(neighborPos, direction));
-            if (power >= 15) {
-                return 15;
+            int power = converter.getLocalInputPower(level);
+            if (power > 0) {
+                redstoneByChannel.merge(channel, power, Math::max);
             }
         }
-        return power;
-    }
 
-    /**
-     * Reads local redstone input from every converter reachable through antenna
-     * data cables.
-     *
-     * @param level server level used for redstone lookup
-     * @return strongest converter-side local redstone signal
-     */
-    private int getConnectedConverterInputPower(ServerLevel level) {
-        int power = 0;
-        for (RedstoneConverterBlockEntity converter : this.connectedRedstoneConverters(level)) {
-            power = Math.max(power, converter.getLocalInputPower(level));
-            if (power >= 15) {
-                return 15;
-            }
+        Map<Integer, Map<Identifier, AntennaPayload>> transmissions = new HashMap<>();
+        redstoneByChannel.forEach((channel, power) -> transmissions
+                .computeIfAbsent(channel, ignored -> new HashMap<>())
+                .put(RedstonePayload.ID, new RedstonePayload(power)));
+
+        if (supportedChannels.contains(this.channel)) {
+            JukeboxSong.fromStack(this.sourceDisc).ifPresent(song -> transmissions
+                    .computeIfAbsent(this.channel, ignored -> new HashMap<>())
+                    .put(MusicDiscPayload.ID, new MusicDiscPayload(this.sourceDisc, song)));
         }
-        return power;
+        return transmissions;
     }
 
     /**
@@ -402,17 +335,24 @@ public class AntennaBaseBlockEntity extends BlockEntity implements MenuProvider,
      * @param level server level
      * @param node this base's channel table identity
      */
-    private void applyReceivedPayloads(ServerLevel level, AntennaNodeKey node) {
-        int nextPower = AntennaChannelTable.aggregate(level, this.channel, node, this.getTransmissionRange(), AntennaPayloadTypes.REDSTONE)
-                .map(RedstonePayload::power)
-                .orElse(0);
+    private void applyReceivedPayloads(ServerLevel level, AntennaNodeKey node,
+            Set<RedstoneConverterBlockEntity> converters) {
+        Set<Integer> supportedChannels = Set.copyOf(AntennaFrequencyPlan.supportedChannels(this.antennaCount));
+        int nextPower = 0;
+        for (RedstoneConverterBlockEntity converter : converters) {
+            int channel = converter.getOutputChannel();
+            int converterPower = supportedChannels.contains(channel)
+                    ? AntennaChannelTable.aggregate(level, channel, node, this.getTransmissionRange(), AntennaPayloadTypes.REDSTONE)
+                            .map(RedstonePayload::power)
+                            .orElse(0)
+                    : 0;
+            converter.setReceivedPower(level, converterPower);
+            nextPower = Math.max(nextPower, converterPower);
+        }
         if (nextPower != this.receivedRedstonePower) {
             this.receivedRedstonePower = nextPower;
             level.updateNeighborsAt(this.worldPosition, this.getBlockState().getBlock());
             this.setChanged();
-        }
-        for (RedstoneConverterBlockEntity converter : this.connectedRedstoneConverters(level)) {
-            converter.setReceivedPower(level, nextPower);
         }
 
         Optional<MusicDiscPayload> musicPayload = AntennaChannelTable.aggregate(level, this.channel, node, this.getTransmissionRange(), AntennaPayloadTypes.MUSIC_DISC);

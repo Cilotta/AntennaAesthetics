@@ -24,6 +24,9 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -33,6 +36,11 @@ import org.jspecify.annotations.Nullable;
  * opens the UI, publishes payloads, and emits received redstone output.
  */
 public class AntennaBaseBlock extends BaseEntityBlock {
+    private static final VoxelShape SHAPE = Shapes.or(
+            Block.box(0, 0, 0, 16, 14, 16),
+            Block.box(2, 14, 2, 14, 15, 14),
+            Block.box(4, 15, 4, 12, 16, 12));
+
     /**
      * Creates the antenna base block with registry-provided properties.
      *
@@ -73,6 +81,11 @@ public class AntennaBaseBlock extends BaseEntityBlock {
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return SHAPE;
     }
 
     /**

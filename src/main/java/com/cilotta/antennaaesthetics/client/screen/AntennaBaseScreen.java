@@ -4,7 +4,6 @@ import com.cilotta.antennaaesthetics.antenna.AntennaFrequencyPlan;
 import com.cilotta.antennaaesthetics.menu.AntennaBaseMenu;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,8 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 /**
  * Client-side screen for the antenna base.
  * <p>
- * The screen displays synchronized menu data and sends channel up/down button
- * presses back through vanilla container button packets.
+ * The screen displays read-only assembly and radio capability information.
  */
 public class AntennaBaseScreen extends AbstractContainerScreen<AntennaBaseMenu> {
     private static final int TEXT_PRIMARY = 0xFFF4F4F4;
@@ -31,22 +29,6 @@ public class AntennaBaseScreen extends AbstractContainerScreen<AntennaBaseMenu> 
         this.inventoryLabelY = 10_000;
         this.titleLabelX = 12;
         this.titleLabelY = 10;
-    }
-
-    /**
-     * Adds channel adjustment buttons after the base container screen positions
-     * itself.
-     */
-    @Override
-    protected void init() {
-        super.init();
-        int y = this.topPos + 106;
-        this.addRenderableWidget(Button.builder(Component.literal("-"), button -> this.changeChannel(AntennaBaseMenu.BUTTON_CHANNEL_DOWN))
-                .bounds(this.leftPos + 118, y, 28, 20)
-                .build());
-        this.addRenderableWidget(Button.builder(Component.literal("+"), button -> this.changeChannel(AntennaBaseMenu.BUTTON_CHANNEL_UP))
-                .bounds(this.leftPos + 154, y, 28, 20)
-                .build());
     }
 
     /**
@@ -82,15 +64,9 @@ public class AntennaBaseScreen extends AbstractContainerScreen<AntennaBaseMenu> 
                 ? Component.translatable("screen.antennaaesthetics.antenna_base.status.ready")
                 : Component.translatable("screen.antennaaesthetics.antenna_base.status.invalid"));
         y += 14;
-        this.drawLine(graphics, y, Component.translatable("screen.antennaaesthetics.antenna_base.count"), Component.literal(this.menu.antennaCount() + " / " + this.menu.maxAntennaCount()));
-        y += 14;
-        this.drawLine(graphics, y, Component.translatable("screen.antennaaesthetics.antenna_base.power"), Component.literal(String.valueOf(this.menu.redstonePower())));
-        y += 14;
         this.drawLine(graphics, y, Component.translatable("screen.antennaaesthetics.antenna_base.range"), Component.literal(this.menu.range() + " blocks"));
         y += 14;
         this.drawLine(graphics, y, Component.translatable("screen.antennaaesthetics.antenna_base.frequencies"), Component.literal(AntennaFrequencyPlan.describeChannels(this.menu.antennaCount())));
-
-        graphics.text(this.font, Component.translatable("screen.antennaaesthetics.antenna_base.channel", this.menu.channel()), 12, 111, TEXT_PRIMARY, false);
     }
 
     /**
@@ -106,14 +82,4 @@ public class AntennaBaseScreen extends AbstractContainerScreen<AntennaBaseMenu> 
         graphics.text(this.font, value, 112, y, TEXT_PRIMARY, false);
     }
 
-    /**
-     * Sends a channel change button event to the server.
-     *
-     * @param buttonId menu button id
-     */
-    private void changeChannel(int buttonId) {
-        if (this.minecraft != null && this.minecraft.gameMode != null) {
-            this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, buttonId);
-        }
-    }
 }

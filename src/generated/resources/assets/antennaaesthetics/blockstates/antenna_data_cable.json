@@ -1,0 +1,62 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "antennaaesthetics:block/antenna_data_cable_core"
+      }
+    },
+    {
+      "apply": {
+        "model": "antennaaesthetics:block/antenna_data_cable_arm"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "antennaaesthetics:block/antenna_data_cable_arm",
+        "y": 90
+      },
+      "when": {
+        "east": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "antennaaesthetics:block/antenna_data_cable_arm",
+        "y": 180
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "antennaaesthetics:block/antenna_data_cable_arm",
+        "y": 270
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "antennaaesthetics:block/antenna_data_cable_arm",
+        "x": 90
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "antennaaesthetics:block/antenna_data_cable_arm",
+        "x": 270
+      },
+      "when": {
+        "down": "true"
+      }
+    }
+  ]
+}

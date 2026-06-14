@@ -8,10 +8,8 @@ import com.cilotta.antennaaesthetics.Config;
 /**
  * Converts a physical antenna length into selectable in-game frequency channels.
  * <p>
- * The current model is intentionally lightweight: the antenna length creates a
- * highest resonant channel, then lower harmonic channels are generated from it.
- * Longer antennas therefore expose more choices without allowing arbitrary UI
- * tuning that the structure cannot support.
+ * Channels are stable frequency steps. Longer antennas add higher channels
+ * while retaining every channel available to shorter antennas.
  */
 public final class AntennaFrequencyPlan {
     /** Lowest channel id supported by the in-game transmitter. */
@@ -33,11 +31,11 @@ public final class AntennaFrequencyPlan {
             return List.of(MIN_CHANNEL);
         }
 
-        int fundamental = Math.clamp(antennaCount * Config.CHANNELS_PER_ANTENNA.getAsInt(), MIN_CHANNEL, MAX_CHANNEL);
-        int maxHarmonics = Math.min(antennaCount, Config.MAX_FREQUENCY_OPTIONS.getAsInt());
+        int step = Config.CHANNELS_PER_ANTENNA.getAsInt();
+        int optionCount = Math.min(antennaCount, Config.MAX_FREQUENCY_OPTIONS.getAsInt());
         List<Integer> channels = new ArrayList<>();
-        for (int harmonic = 1; harmonic <= maxHarmonics; harmonic++) {
-            int channel = Math.clamp(fundamental / harmonic, MIN_CHANNEL, MAX_CHANNEL);
+        for (int option = 1; option <= optionCount; option++) {
+            int channel = Math.clamp(option * step, MIN_CHANNEL, MAX_CHANNEL);
             if (!channels.contains(channel)) {
                 channels.add(channel);
             }

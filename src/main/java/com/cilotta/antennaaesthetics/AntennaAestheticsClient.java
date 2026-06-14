@@ -2,6 +2,7 @@ package com.cilotta.antennaaesthetics;
 
 import net.minecraft.client.Minecraft;
 import com.cilotta.antennaaesthetics.client.screen.AntennaBaseScreen;
+import com.cilotta.antennaaesthetics.client.screen.RedstoneConverterScreen;
 import com.cilotta.antennaaesthetics.registry.ModMenus;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -49,5 +50,6 @@ public class AntennaAestheticsClient {
     @SubscribeEvent
     static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.ANTENNA_BASE.get(), AntennaBaseScreen::new);
+        event.register(ModMenus.REDSTONE_CONVERTER.get(), RedstoneConverterScreen::new);
     }
 }

@@ -3,16 +3,26 @@ package com.cilotta.antennaaesthetics.blockentity;
 import com.cilotta.antennaaesthetics.block.AntennaBaseBlock;
 import com.cilotta.antennaaesthetics.block.AntennaDataCableBlock;
 import com.cilotta.antennaaesthetics.block.RedstoneConverterBlock;
+import com.cilotta.antennaaesthetics.menu.RedstoneConverterMenu;
 import com.cilotta.antennaaesthetics.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.extensions.IMenuProviderExtension;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Runtime state for a redstone converter.
@@ -22,9 +32,34 @@ import net.minecraft.world.level.storage.ValueOutput;
  * redstone output. It ignores antenna infrastructure blocks while reading input
  * to avoid feedback loops.
  */
-public class RedstoneConverterBlockEntity extends BlockEntity {
+public class RedstoneConverterBlockEntity extends BlockEntity implements MenuProvider, IMenuProviderExtension {
+    public static final int DISABLED_CHANNEL = -1;
+    public static final int MAX_CHANNEL = 99;
+
+    private int inputChannel = 8;
+    private int outputChannel = 8;
     private int receivedPower;
     private long lastBaseUpdateTick = Long.MIN_VALUE;
+    private final ContainerData menuData = new ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> RedstoneConverterBlockEntity.this.inputChannel;
+                case 1 -> RedstoneConverterBlockEntity.this.outputChannel;
+                case 2 -> RedstoneConverterBlockEntity.this.receivedPower;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+        }
+
+        @Override
+        public int getCount() {
+            return RedstoneConverterMenu.DATA_COUNT;
+        }
+    };
 
     /**
      * Creates a redstone converter block entity.
@@ -61,6 +96,30 @@ public class RedstoneConverterBlockEntity extends BlockEntity {
         return this.receivedPower;
     }
 
+    public int getInputChannel() {
+        return this.inputChannel;
+    }
+
+    public int getOutputChannel() {
+        return this.outputChannel;
+    }
+
+    public boolean adjustInputChannel(int delta) {
+        this.inputChannel = cycleChannel(this.inputChannel, delta);
+        this.setChanged();
+        return true;
+    }
+
+    public boolean adjustOutputChannel(int delta) {
+        this.outputChannel = cycleChannel(this.outputChannel, delta);
+        this.setChanged();
+        return true;
+    }
+
+    private static int cycleChannel(int channel, int delta) {
+        return Math.floorMod(channel + 1 + delta, MAX_CHANNEL + 2) - 1;
+    }
+
     /**
      * Reads local vanilla redstone input while avoiding antenna infrastructure.
      *
@@ -68,7 +127,7 @@ public class RedstoneConverterBlockEntity extends BlockEntity {
      * @return strongest external redstone input
      */
     public int getLocalInputPower(ServerLevel level) {
-        if (this.receivedPower > 0) {
+        if (this.receivedPower > 0 && this.inputChannel == this.outputChannel) {
             return 0;
         }
 
@@ -114,6 +173,8 @@ public class RedstoneConverterBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
+        this.inputChannel = input.getIntOr("input_channel", 8);
+        this.outputChannel = input.getIntOr("output_channel", 8);
         this.receivedPower = input.getIntOr("received_power", 0);
     }
 
@@ -125,6 +186,23 @@ public class RedstoneConverterBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
+        output.putInt("input_channel", this.inputChannel);
+        output.putInt("output_channel", this.outputChannel);
         output.putInt("received_power", this.receivedPower);
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("block.antennaaesthetics.redstone_converter");
+    }
+
+    @Override
+    public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
+        return new RedstoneConverterMenu(containerId, inventory, this, this.menuData);
+    }
+
+    @Override
+    public void writeClientSideData(AbstractContainerMenu menu, RegistryFriendlyByteBuf buffer) {
+        buffer.writeBlockPos(this.worldPosition);
     }
 }

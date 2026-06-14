@@ -3,6 +3,7 @@ package com.cilotta.antennaaesthetics;
 import org.slf4j.Logger;
 
 import com.cilotta.antennaaesthetics.antenna.AntennaChannelTable;
+import com.cilotta.antennaaesthetics.data.AntennaModelProvider;
 import com.cilotta.antennaaesthetics.registry.ModBlockEntities;
 import com.cilotta.antennaaesthetics.registry.ModBlocks;
 import com.cilotta.antennaaesthetics.registry.ModMenus;
@@ -11,9 +12,11 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -22,6 +25,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -44,9 +48,11 @@ public class AntennaAesthetics {
     /** Deferred item register. */
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     /** Deferred block entity type register. */
-    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
+    public static final DeferredRegister<BlockEntityType<? extends BlockEntity>> BLOCK_ENTITY_TYPES =
+            DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
     /** Deferred menu type register. */
-    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, MODID);
+    public static final DeferredRegister<MenuType<? extends AbstractContainerMenu>> MENUS =
+            DeferredRegister.create(Registries.MENU, MODID);
     /** Deferred creative tab register. */
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
@@ -74,6 +80,7 @@ public class AntennaAesthetics {
         ModMenus.register();
 
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::gatherClientData);
 
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
@@ -96,6 +103,10 @@ public class AntennaAesthetics {
                 Config.MAX_ANTENNA_COUNT.getAsInt(),
                 Config.BLOCKS_PER_ANTENNA.getAsInt(),
                 Config.CHANNELS_PER_ANTENNA.getAsInt());
+    }
+
+    private void gatherClientData(GatherDataEvent.Client event) {
+        event.createProvider(AntennaModelProvider::new);
     }
 
     /**
